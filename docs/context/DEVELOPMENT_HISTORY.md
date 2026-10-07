@@ -11,3 +11,5 @@ Este arquivo recebe marcos efetivamente integrados e PRs relevantes. Estado tran
 - Issue #18: recuperação do módulo Biblioteca com PR exclusiva, testes e modelo persistente correspondente.
 
 - Issue #19: recuperação do módulo Anotacoes com PR exclusiva, testes e modelo persistente correspondente.
+
+- Issue #20: recuperação do módulo Conhecimento com PR exclusiva, testes e modelo persistente correspondente.
