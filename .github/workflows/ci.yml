@@ -1,0 +1,26 @@
+name: Backend CI
+on: [push, pull_request]
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: cognexa_tests
+          POSTGRES_USER: cognexa
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cognexa -d cognexa_tests"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      COGNEXA_TEST_CONNECTION: Host=localhost;Database=cognexa_tests;Username=cognexa;Password=ci-only-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore
+      - run: dotnet build --no-restore --configuration Release
+      - run: dotnet test --no-build --configuration Release --logger trx
