@@ -1,6 +1,8 @@
+using Cognexa.Application.Anotacoes;
 using Cognexa.Application.Biblioteca;
 using Cognexa.Application.Compartilhado;
 using Cognexa.Application.Usuarios;
+using Cognexa.Domain.Anotacoes;
 using Cognexa.Domain.Biblioteca;
 using Cognexa.Domain.Compartilhado;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +28,11 @@ public sealed class CasosDeUsoTests : IDisposable
     }
     private T Obter<T>() where T : notnull => _services.GetRequiredService<T>();
     private Task<LivroDto> Livro() => Obter<LivroAppService>().CriarAsync(new("Livro", ["Autor"], 100), default);
+    private async Task<AnotacaoDto> Anotacao()
+    {
+        var livro = await Livro();
+        return await Obter<AnotacaoAppService>().CriarAsync(new(livro.Id, null, TipoDeAnotacao.Insight, "Original", "Comentário", 10), default);
+    }
     [Fact]
     public async Task IdentidadeEPreferenciasPertencemAoUsuarioAtual()
     {
@@ -36,6 +43,15 @@ public sealed class CasosDeUsoTests : IDisposable
         await Assert.ThrowsAsync<ConflitoException>(() => Obter<UsuarioAppService>().CriarAsync(new("Outro"), default));
         _usuario.IdUsuario = Guid.NewGuid();
         await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<UsuarioAppService>().ObterAsync(default));
+    }
+    [Fact]
+    public async Task AnotacaoValidaCapituloEPaginaDoLivro()
+    {
+        var livro = await Livro();
+        var outro = await Livro();
+        var capitulo = await Obter<LivroAppService>().CriarCapituloAsync(outro.Id, new("Capítulo", 1), default);
+        await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<AnotacaoAppService>().CriarAsync(new(livro.Id, capitulo.Id, TipoDeAnotacao.Insight, null, "Comentário"), default));
+        await Assert.ThrowsAsync<RegraDeDominioException>(() => Obter<AnotacaoAppService>().CriarAsync(new(livro.Id, null, TipoDeAnotacao.Insight, null, "Comentário", 101), default));
     }
     [Fact]
     public async Task ContratoCrudMantemIdentidadeGeradaEAplicaFiltroNaAtualizacao()

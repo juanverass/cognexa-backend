@@ -1,3 +1,4 @@
+using Cognexa.Domain.Anotacoes;
 using Cognexa.Domain.Biblioteca;
 using Cognexa.Domain.Compartilhado;
 using Cognexa.Domain.Usuarios;
@@ -41,5 +42,15 @@ public class RegrasTests
         Assert.Equal(agora, leitura.DataDeConclusao);
         leitura.Atualizar(StatusDaLeitura.Lendo, 90, 100, agora);
         Assert.Null(leitura.DataDeConclusao);
+    }
+    [Fact]
+    public void AnotacaoPreservaTextoLiteralEPermiteComentarioSemTrecho()
+    {
+        const string trecho = "  Texto original\n com espaços  ";
+        var anotacao = new Anotacao(Guid.NewGuid(), Guid.NewGuid(), null, TipoDeAnotacao.Citacao, trecho, null, 2, null, DateTimeOffset.UtcNow);
+        Assert.Equal(trecho, anotacao.TrechoOriginal);
+        anotacao.Atualizar(null, TipoDeAnotacao.Insight, null, "Meu comentário", null, null);
+        Assert.Null(anotacao.TrechoOriginal);
+        Assert.Throws<RegraDeDominioException>(() => anotacao.Atualizar(null, TipoDeAnotacao.Insight, null, "  ", null, null));
     }
 }

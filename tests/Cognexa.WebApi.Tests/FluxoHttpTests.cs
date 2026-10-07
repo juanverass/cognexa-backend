@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Cognexa.Application.Anotacoes;
 using Cognexa.Application.Biblioteca;
 using Cognexa.Application.Usuarios;
+using Cognexa.Domain.Anotacoes;
 using Cognexa.Domain.Biblioteca;
 using Cognexa.Domain.Compartilhado;
 using Cognexa.Tests.Compartilhado;
@@ -45,7 +47,7 @@ public class FluxoHttpTests(PostgreSqlFixture banco) : IClassFixture<PostgreSqlF
     {
         await using var factory = Factory(new TempoControlado());
         using var client = factory.CreateClient();
-        var semToken = await client.GetAsync("/usuarios/me");
+        var semToken = await client.GetAsync("/anotacoes");
         Assert.Equal(HttpStatusCode.Unauthorized, semToken.StatusCode);
         Assert.Equal("application/problem+json", semToken.Content.Headers.ContentType!.MediaType);
         client.DefaultRequestHeaders.Authorization = new("Bearer", new string('x', 32));

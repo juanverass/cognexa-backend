@@ -22,6 +22,52 @@ namespace Cognexa.Infrastructure.Persistencia.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Cognexa.Domain.Anotacoes.Anotacao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comentario")
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)");
+
+                    b.Property<DateTimeOffset>("DataDeCriacao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("IdCapitulo")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("IdLivro")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("IdUsuario")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Localizacao")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("Pagina")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TrechoOriginal")
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdLivro", "IdUsuario");
+
+                    b.HasIndex("IdCapitulo", "IdLivro", "IdUsuario");
+
+                    b.HasIndex("IdUsuario", "IdLivro", "Tipo", "Pagina");
+
+                    b.ToTable("Anotacao");
+                });
+
             modelBuilder.Entity("Cognexa.Domain.Biblioteca.Autor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -183,6 +229,28 @@ namespace Cognexa.Infrastructure.Persistencia.Migrations
                         .IsUnique();
 
                     b.ToTable("VinculoDeIdentidade");
+                });
+
+            modelBuilder.Entity("Cognexa.Domain.Anotacoes.Anotacao", b =>
+                {
+                    b.HasOne("Cognexa.Domain.Usuarios.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cognexa.Domain.Biblioteca.Livro", null)
+                        .WithMany()
+                        .HasForeignKey("IdLivro", "IdUsuario")
+                        .HasPrincipalKey("Id", "IdUsuario")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cognexa.Domain.Biblioteca.Capitulo", null)
+                        .WithMany()
+                        .HasForeignKey("IdCapitulo", "IdLivro", "IdUsuario")
+                        .HasPrincipalKey("Id", "IdLivro", "IdUsuario")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Cognexa.Domain.Biblioteca.Autor", b =>
