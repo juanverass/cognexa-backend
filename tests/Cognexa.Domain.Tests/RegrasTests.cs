@@ -2,6 +2,7 @@ using Cognexa.Domain.Anotacoes;
 using Cognexa.Domain.Biblioteca;
 using Cognexa.Domain.Compartilhado;
 using Cognexa.Domain.Conhecimento;
+using Cognexa.Domain.Revisoes;
 using Cognexa.Domain.Usuarios;
 namespace Cognexa.Domain.Tests;
 
@@ -69,5 +70,23 @@ public class RegrasTests
     {
         var id = Guid.NewGuid();
         Assert.Throws<RegraDeDominioException>(() => new RelacaoEntreConceitos(Guid.NewGuid(), id, id, TipoDeRelacao.Complementa));
+    }
+    [Fact]
+    public void RevisaoPreservaHistoricoERegrideAposErro()
+    {
+        var agora = DateTimeOffset.UtcNow;
+        var revisao = new Revisao(Guid.NewGuid(), Guid.NewGuid(), agora);
+        var historico = new List<HistoricoDeRevisao>();
+        for (var i = 0; i < 6; i++)
+        {
+            historico.Add(revisao.Registrar(ResultadoDaRevisao.Bom, "Resposta", agora, agora.AddDays(1)));
+            agora = agora.AddDays(1);
+        }
+        Assert.Equal(NivelDeDominio.Dominado, revisao.NivelDeDominio);
+        historico.Add(revisao.Registrar(ResultadoDaRevisao.Errou, "Não lembrei", agora, agora.AddDays(1)));
+        Assert.Equal(7, historico.Count);
+        Assert.Equal(NivelDeDominio.Dominado, historico[^1].NivelAnterior);
+        Assert.Equal(NivelDeDominio.Inicial, revisao.NivelDeDominio);
+        Assert.Throws<ConflitoException>(() => revisao.Registrar(ResultadoDaRevisao.Bom, null, agora, agora.AddDays(1)));
     }
 }

@@ -2,10 +2,12 @@ using Cognexa.Application.Anotacoes;
 using Cognexa.Application.Biblioteca;
 using Cognexa.Application.Compartilhado;
 using Cognexa.Application.Conhecimento;
+using Cognexa.Application.Revisoes;
 using Cognexa.Application.Usuarios;
 using Cognexa.Domain.Anotacoes;
 using Cognexa.Domain.Biblioteca;
 using Cognexa.Domain.Compartilhado;
+using Cognexa.Domain.Revisoes;
 using Microsoft.Extensions.DependencyInjection;
 namespace Cognexa.Application.Tests;
 
@@ -25,6 +27,8 @@ public sealed class CasosDeUsoTests : IDisposable
         services.AddSingleton<IUsuarioAtual>(_usuario);
         services.AddSingleton<IUnitOfWork>(_uow);
         services.AddSingleton<TimeProvider>(_tempo);
+        services.AddSingleton<IAgendadorDeRevisao, AgendadorTeste>();
+        services.AddSingleton<IRevisaoRepository, RevisaoRepositoryTeste>();
         _services = services.BuildServiceProvider();
     }
     private T Obter<T>() where T : notnull => _services.GetRequiredService<T>();
@@ -78,6 +82,24 @@ public sealed class CasosDeUsoTests : IDisposable
         Assert.Single(await Obter<AprendizadoAppService>().ListarAsync(new(IdLivro: outra.IdLivro, IdConceito: conceito.Id, IdAnotacao: anotacao.Id)));
         var aplicacao = await Obter<ConexoesAppService>().CriarAplicacaoAsync(new(aprendizado.Id, "Aplicar"), default);
         Assert.Equal(aprendizado.Id, aplicacao.IdAprendizado);
+    }
+    [Fact]
+    public async Task RevisaoUsaAgendadorSubstituivelEGravaHistorico()
+    {
+        var anotacao = await Anotacao();
+        var aprendizado = await Obter<AprendizadoAppService>().CriarAsync(new("Síntese", [anotacao.Id], []), default);
+        var criada = await Obter<RevisaoAppService>().CriarAsync(new(aprendizado.Id, "Pergunta?", "Resposta"), default);
+        Assert.Single(await Obter<RevisaoAppService>().ListarDevidasAsync(null, null, 100, default));
+        var revisao = await Obter<RevisaoAppService>().RegistrarAsync(criada.Revisao.Id, new(ResultadoDaRevisao.Bom, "Resposta"), default);
+        Assert.Equal(_tempo.Agora.AddDays(3), revisao.ProximaRevisao);
+        Assert.Empty(await Obter<RevisaoAppService>().ListarDevidasAsync(null, null, 100, default));
+        var historicos = (RepositoryEmMemoria<HistoricoDeRevisao>)Obter<IRepository<HistoricoDeRevisao>>();
+        Assert.Single(historicos.Entidades);
+        _tempo.Agora = _tempo.Agora.AddDays(3);
+        await Obter<RevisaoAppService>().RegistrarAsync(criada.Revisao.Id, new(ResultadoDaRevisao.Errou, null), default);
+        Assert.Equal(2, historicos.Entidades.Count);
+        _usuario.IdUsuario = Guid.NewGuid();
+        await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<RevisaoAppService>().RegistrarAsync(criada.Revisao.Id, new(ResultadoDaRevisao.Bom, null), default));
     }
     [Fact]
     public async Task ContratoCrudMantemIdentidadeGeradaEAplicaFiltroNaAtualizacao()

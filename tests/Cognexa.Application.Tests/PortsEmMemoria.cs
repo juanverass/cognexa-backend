@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
 using Cognexa.Application.Compartilhado;
+using Cognexa.Application.Revisoes;
 using Cognexa.Domain.Compartilhado;
+using Cognexa.Domain.Revisoes;
 namespace Cognexa.Application.Tests;
 
 public class RepositoryEmMemoria<TEntity> : IRepository<TEntity> where TEntity : EntidadeBase
@@ -34,6 +36,17 @@ public sealed class TempoTeste : TimeProvider
 {
     public DateTimeOffset Agora { get; set; } = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
     public override DateTimeOffset GetUtcNow() => Agora;
+}
+
+public sealed class AgendadorTeste : IAgendadorDeRevisao
+{
+    public DateTimeOffset CalcularProxima(Revisao revisao, ResultadoDaRevisao resultado, DateTimeOffset agora) => agora.AddDays(3);
+}
+
+public sealed class RevisaoRepositoryTeste : RepositoryEmMemoria<Revisao>, IRevisaoRepository
+{
+    public Task<IReadOnlyList<Revisao>> ListarDevidasAsync(Guid idUsuario, DateTimeOffset agora, Guid? idLivro, Guid? idConceito, int limite, CancellationToken ct) => Task.FromResult<IReadOnlyList<Revisao>>(Entidades.Where(x => x.IdUsuario == idUsuario && x.ProximaRevisao <= agora).Take(limite).ToArray());
+    public Task<IReadOnlyList<HistoricoDeRevisao>> ListarHistoricoAsync(Guid idUsuario, Guid idRevisao, int pagina, CancellationToken ct) => Task.FromResult<IReadOnlyList<HistoricoDeRevisao>>([]);
 }
 
 public sealed class VinculoTeste(UsuarioAtualTeste atual) : Cognexa.Application.Usuarios.IIdentidadeAtual, Cognexa.Application.Usuarios.IVinculoDeIdentidadeRepository
