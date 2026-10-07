@@ -21,6 +21,7 @@ app.UseAuthorization();
 app.MapUsuarios();
 app.MapBiblioteca();
 app.MapAnotacoes();
+app.MapConhecimento();
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 app.Run();

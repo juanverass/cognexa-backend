@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Cognexa.Application.Anotacoes;
 using Cognexa.Application.Biblioteca;
+using Cognexa.Application.Conhecimento;
 using Cognexa.Application.Usuarios;
 using Cognexa.Domain.Anotacoes;
 using Cognexa.Domain.Biblioteca;

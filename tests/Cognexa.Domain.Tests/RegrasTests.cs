@@ -1,6 +1,7 @@
 using Cognexa.Domain.Anotacoes;
 using Cognexa.Domain.Biblioteca;
 using Cognexa.Domain.Compartilhado;
+using Cognexa.Domain.Conhecimento;
 using Cognexa.Domain.Usuarios;
 namespace Cognexa.Domain.Tests;
 
@@ -52,5 +53,21 @@ public class RegrasTests
         anotacao.Atualizar(null, TipoDeAnotacao.Insight, null, "Meu comentário", null, null);
         Assert.Null(anotacao.TrechoOriginal);
         Assert.Throws<RegraDeDominioException>(() => anotacao.Atualizar(null, TipoDeAnotacao.Insight, null, "  ", null, null));
+    }
+    [Fact]
+    public void AprendizadoExigeFonteEConservaVinculos()
+    {
+        Assert.Throws<RegraDeDominioException>(() => new Aprendizado(Guid.NewGuid(), "Ideia", [], [], DateTimeOffset.UtcNow));
+        var fonte = (Guid.NewGuid(), Guid.NewGuid());
+        var aprendizado = new Aprendizado(Guid.NewGuid(), "Síntese", [fonte, fonte], [], DateTimeOffset.UtcNow);
+        Assert.Single(aprendizado.Fontes);
+        aprendizado.Atualizar("Nova síntese");
+        Assert.Equal(fonte.Item1, aprendizado.Fontes.Single().IdAnotacao);
+    }
+    [Fact]
+    public void RelacaoNaoPodeApontarParaSiMesma()
+    {
+        var id = Guid.NewGuid();
+        Assert.Throws<RegraDeDominioException>(() => new RelacaoEntreConceitos(Guid.NewGuid(), id, id, TipoDeRelacao.Complementa));
     }
 }

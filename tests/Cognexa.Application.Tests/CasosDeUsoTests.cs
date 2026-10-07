@@ -1,6 +1,7 @@
 using Cognexa.Application.Anotacoes;
 using Cognexa.Application.Biblioteca;
 using Cognexa.Application.Compartilhado;
+using Cognexa.Application.Conhecimento;
 using Cognexa.Application.Usuarios;
 using Cognexa.Domain.Anotacoes;
 using Cognexa.Domain.Biblioteca;
@@ -45,6 +46,17 @@ public sealed class CasosDeUsoTests : IDisposable
         await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<UsuarioAppService>().ObterAsync(default));
     }
     [Fact]
+    public async Task LivroAnotacaoEFontesDeOutroUsuarioNaoSaoAcessiveis()
+    {
+        var anotacao = await Anotacao();
+        _usuario.IdUsuario = Guid.NewGuid();
+        await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<LivroAppService>().ObterAsync(anotacao.IdLivro));
+        await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<AnotacaoAppService>().ObterAsync(anotacao.Id));
+        await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<AnotacaoAppService>().RemoverAsync(anotacao.Id));
+        Assert.Empty(await Obter<AnotacaoAppService>().ListarAsync(new()));
+        await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<AprendizadoAppService>().CriarAsync(new("Síntese", [anotacao.Id], []), default));
+    }
+    [Fact]
     public async Task AnotacaoValidaCapituloEPaginaDoLivro()
     {
         var livro = await Livro();
@@ -52,6 +64,20 @@ public sealed class CasosDeUsoTests : IDisposable
         var capitulo = await Obter<LivroAppService>().CriarCapituloAsync(outro.Id, new("Capítulo", 1), default);
         await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<AnotacaoAppService>().CriarAsync(new(livro.Id, capitulo.Id, TipoDeAnotacao.Insight, null, "Comentário"), default));
         await Assert.ThrowsAsync<RegraDeDominioException>(() => Obter<AnotacaoAppService>().CriarAsync(new(livro.Id, null, TipoDeAnotacao.Insight, null, "Comentário", 101), default));
+    }
+    [Fact]
+    public async Task FiltrosEncontramAnotacoesEConhecimentoPorFonteLivroEConceito()
+    {
+        var anotacao = await Anotacao();
+        var outra = await Anotacao();
+        Assert.Single(await Obter<AnotacaoAppService>().ListarAsync(new(IdLivro: anotacao.IdLivro, Tipo: TipoDeAnotacao.Insight, Pagina: 10)));
+        Assert.Empty(await Obter<AnotacaoAppService>().ListarAsync(new(Tipo: TipoDeAnotacao.Duvida)));
+        var conceito = await Obter<ConceitoAppService>().CriarAsync(new("Conceito"), default);
+        var aprendizado = await Obter<AprendizadoAppService>().CriarAsync(new("Síntese", [anotacao.Id, outra.Id], [conceito.Id]), default);
+        Assert.Equal(2, aprendizado.Fontes.Length);
+        Assert.Single(await Obter<AprendizadoAppService>().ListarAsync(new(IdLivro: outra.IdLivro, IdConceito: conceito.Id, IdAnotacao: anotacao.Id)));
+        var aplicacao = await Obter<ConexoesAppService>().CriarAplicacaoAsync(new(aprendizado.Id, "Aplicar"), default);
+        Assert.Equal(aprendizado.Id, aplicacao.IdAprendizado);
     }
     [Fact]
     public async Task ContratoCrudMantemIdentidadeGeradaEAplicaFiltroNaAtualizacao()
