@@ -11,6 +11,7 @@ public static class ConfiguracaoApplication
         services.AddSingleton(config);
         services.AddScoped<Cognexa.Application.Usuarios.UsuarioAppService>();
         services.AddSingleton(TimeProvider.System);
+        services.AddScoped<Cognexa.Application.Biblioteca.LivroAppService>();
         return services;
     }
 }

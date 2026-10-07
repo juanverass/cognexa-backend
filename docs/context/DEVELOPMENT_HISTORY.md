@@ -7,3 +7,5 @@ Este arquivo recebe marcos efetivamente integrados e PRs relevantes. Estado tran
 `main` foi iniciado com README. Ainda não há marco de produto integrado. PRs em review não são registradas como entregas mescladas.
 
 - Issue #17: recuperação do módulo Usuarios com PR exclusiva, testes e modelo persistente correspondente.
+
+- Issue #18: recuperação do módulo Biblioteca com PR exclusiva, testes e modelo persistente correspondente.
