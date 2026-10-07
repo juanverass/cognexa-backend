@@ -5,13 +5,14 @@ Este retrato descreve o conteúdo desta branch, não a sessão ou o ownership de
 ## Disponível
 
 - Harness: contrato compartilhado, protocolos de backlog/turnos/review, adaptadores e skills Codex/Claude, templates e contexto persistente.
-- Fundação arquitetural recuperada até a issue #13, em sequência #8–#14.
+- Fundação arquitetural recuperada até a issue #14, em sequência #8–#14.
 - Módulos presentes: nenhum módulo funcional ainda.
 - Camadas .NET 10: Domain, Application, Infrastructure, WebApi e Worker; testes por camada e referências protegidas por testes arquiteturais.
 - Identidade Guid gerada pelo domínio, ports de Repository/UnitOfWork e base CRUD independente de EF.
 - Mapster registrado por feature na Application.
 - Persistência EF Core/Npgsql, health checks e migrations explícitas; integração usa schemas isolados em PostgreSQL descartável.
 - ProblemDetails seguro para erros conhecidos e inesperados, com traceId.
+- CI: restore, build Release e testes, com PostgreSQL descartável.
 
 ## Limites
 
