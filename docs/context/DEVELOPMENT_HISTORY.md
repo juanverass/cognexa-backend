@@ -15,3 +15,5 @@ Este arquivo recebe marcos efetivamente integrados e PRs relevantes. Estado tran
 - Issue #20: recuperação do módulo Conhecimento com PR exclusiva, testes e modelo persistente correspondente.
 
 - Issue #21: recuperação do módulo Revisoes com PR exclusiva, testes e modelo persistente correspondente.
+
+- Issue #22: recuperação do módulo Inteligencia com PR exclusiva, testes e modelo persistente correspondente.

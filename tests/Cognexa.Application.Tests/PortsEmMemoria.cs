@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Cognexa.Application.Compartilhado;
+using Cognexa.Application.Inteligencia;
 using Cognexa.Application.Revisoes;
 using Cognexa.Domain.Compartilhado;
 using Cognexa.Domain.Revisoes;
@@ -36,6 +37,29 @@ public sealed class TempoTeste : TimeProvider
 {
     public DateTimeOffset Agora { get; set; } = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
     public override DateTimeOffset GetUtcNow() => Agora;
+}
+
+public sealed class InteligenciaTeste : IInteligenciaProvider, IBuscaSemanticaProvider
+{
+    public Guid? FonteInventada
+    {
+        get; set;
+    }
+    public IReadOnlyList<FonteInteligenciaDto> FontesRecebidas { get; private set; } = [];
+    public Guid UsuarioDaBusca
+    {
+        get; private set;
+    }
+    public Task<ConteudoGeradoDto> GerarAsync(OperacaoInteligente operacao, IReadOnlyList<FonteInteligenciaDto> fontes, CancellationToken ct)
+    {
+        FontesRecebidas = fontes;
+        return Task.FromResult(new ConteudoGeradoDto("Sugestão", FonteInventada.HasValue ? [FonteInventada.Value] : fontes.Select(f => f.Id).ToArray()));
+    }
+    public Task<IReadOnlyList<ResultadoSemanticoDto>> BuscarAsync(Guid idUsuario, string consulta, int limite, CancellationToken ct)
+    {
+        UsuarioDaBusca = idUsuario;
+        return Task.FromResult<IReadOnlyList<ResultadoSemanticoDto>>([]);
+    }
 }
 
 public sealed class AgendadorTeste : IAgendadorDeRevisao
