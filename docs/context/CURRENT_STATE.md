@@ -5,9 +5,10 @@ Este retrato descreve o conteúdo desta branch, não a sessão ou o ownership de
 ## Disponível
 
 - Harness: contrato compartilhado, protocolos de backlog/turnos/review, adaptadores e skills Codex/Claude, templates e contexto persistente.
-- Fundação arquitetural recuperada até a issue #8, em sequência #8–#14.
+- Fundação arquitetural recuperada até a issue #9, em sequência #8–#14.
 - Módulos presentes: nenhum módulo funcional ainda.
 - Camadas .NET 10: Domain, Application, Infrastructure, WebApi e Worker; testes por camada e referências protegidas por testes arquiteturais.
+- Identidade Guid gerada pelo domínio, ports de Repository/UnitOfWork e base CRUD independente de EF.
 
 ## Limites
 
