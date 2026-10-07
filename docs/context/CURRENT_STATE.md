@@ -1,17 +1,14 @@
-# Estado atual
+# Estado atual do código
 
-Retrato do código desta branch, não um diário de sessão. O estado vivo de issues, ownership e PRs é consultado no GitHub.
+Este retrato descreve o conteúdo desta branch, não a sessão ou o ownership de issues. A integração em main é conferida no GitHub.
 
 ## Disponível
 
-- Adaptadores AGENTS.md e CLAUDE.md com fonte normativa única.
-- Protocolos de backlog, turnos, recovery, review e entrega por issue.
-- Skills espelhadas de continuar/encerrar turno e templates GitHub.
+- Harness: contrato compartilhado, protocolos de backlog/turnos/review, adaptadores e skills Codex/Claude, templates e contexto persistente.
+- Fundação arquitetural recuperada até a issue #8, em sequência #8–#14.
+- Módulos presentes: nenhum módulo funcional ainda.
+- Camadas .NET 10: Domain, Application, Infrastructure, WebApi e Worker; testes por camada e referências protegidas por testes arquiteturais.
 
-## Código de produto
+## Limites
 
-Esta base ainda não contém solution ou implementação funcional .NET. A fundação é o escopo das tarefas #8–#14 da epic #1. Os módulos são as epics #2–#7; tarefas executáveis são vinculadas no GitHub.
-
-## Validação desta base
-
-Links locais e consistência dos adaptadores são verificáveis. Build e testes de produto ainda não se aplicam: não existe solution nesta branch. Quando uma entrega adicionar código, atualizar esta seção no mesmo PR com comandos e resultados reais.
+Frontend, autenticação social, billing e jobs de negócio não fazem parte desta entrega. Credenciais e connection strings são configuração externa. Nenhum startup aplica migrations automaticamente. PRs aguardam revisão e integração humana; epics não são implementadas diretamente.

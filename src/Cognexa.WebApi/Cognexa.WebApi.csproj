@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../Cognexa.Application/Cognexa.Application.csproj" />
+    <ProjectReference Include="../Cognexa.Infrastructure/Cognexa.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
