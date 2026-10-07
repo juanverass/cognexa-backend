@@ -9,6 +9,7 @@ public static class ConfiguracaoApplication
         var config = new TypeAdapterConfig();
         config.Scan(typeof(ConfiguracaoApplication).Assembly);
         services.AddSingleton(config);
+        services.AddScoped<Cognexa.Application.Usuarios.UsuarioAppService>();
         services.AddSingleton(TimeProvider.System);
         return services;
     }
