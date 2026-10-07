@@ -1,9 +1,15 @@
 using Cognexa.Application;
 using Cognexa.Infrastructure;
+using Cognexa.WebApi;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication().AddInfrastructure(builder.Configuration);
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context => context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
+builder.Services.AddExceptionHandler<TratamentoDeErros>();
+builder.Services.Configure<Microsoft.AspNetCore.Routing.RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
 var app = builder.Build();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
 app.Run();
