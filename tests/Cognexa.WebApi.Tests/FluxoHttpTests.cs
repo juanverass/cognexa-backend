@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Cognexa.Application.Biblioteca;
 using Cognexa.Application.Usuarios;
+using Cognexa.Domain.Biblioteca;
 using Cognexa.Domain.Compartilhado;
 using Cognexa.Tests.Compartilhado;
 using Microsoft.AspNetCore.Hosting;

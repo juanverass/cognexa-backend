@@ -1,5 +1,7 @@
+using Cognexa.Application.Biblioteca;
 using Cognexa.Application.Compartilhado;
 using Cognexa.Application.Usuarios;
+using Cognexa.Domain.Biblioteca;
 using Cognexa.Domain.Compartilhado;
 using Microsoft.Extensions.DependencyInjection;
 namespace Cognexa.Application.Tests;
@@ -23,6 +25,7 @@ public sealed class CasosDeUsoTests : IDisposable
         _services = services.BuildServiceProvider();
     }
     private T Obter<T>() where T : notnull => _services.GetRequiredService<T>();
+    private Task<LivroDto> Livro() => Obter<LivroAppService>().CriarAsync(new("Livro", ["Autor"], 100), default);
     [Fact]
     public async Task IdentidadeEPreferenciasPertencemAoUsuarioAtual()
     {
@@ -33,6 +36,22 @@ public sealed class CasosDeUsoTests : IDisposable
         await Assert.ThrowsAsync<ConflitoException>(() => Obter<UsuarioAppService>().CriarAsync(new("Outro"), default));
         _usuario.IdUsuario = Guid.NewGuid();
         await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<UsuarioAppService>().ObterAsync(default));
+    }
+    [Fact]
+    public async Task ContratoCrudMantemIdentidadeGeradaEAplicaFiltroNaAtualizacao()
+    {
+        ICrudBasicoAppService<LivroDto, LivroSearchDto, Livro> crud = Obter<LivroAppService>();
+        var idFornecido = Guid.NewGuid();
+        var criado = await crud.CriarAsync(new(idFornecido, "Livro", ["Autor"], 100, null, null, null));
+        Assert.NotEqual(idFornecido, criado.Id);
+        var alterado = await crud.AtualizarAsync(criado.Id, criado with
+        {
+            Titulo = "Novo"
+        });
+        Assert.Equal(criado.Id, alterado.Id);
+        Assert.Equal("Novo", alterado.Titulo);
+        _usuario.IdUsuario = Guid.NewGuid();
+        await Assert.ThrowsAsync<NaoEncontradoException>(() => crud.AtualizarAsync(criado.Id, criado with { Titulo = "Inválido" }));
     }
     public void Dispose() => _services.Dispose();
 }
