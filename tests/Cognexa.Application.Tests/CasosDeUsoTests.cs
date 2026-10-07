@@ -28,6 +28,7 @@ public sealed class CasosDeUsoTests : IDisposable
         services.AddSingleton<IVinculoDeIdentidadeRepository>(vinculo);
         services.AddSingleton<IUsuarioAtual>(_usuario);
         services.AddSingleton<IUnitOfWork>(_uow);
+        services.AddSingleton<Cognexa.Application.Anotacoes.IControleDeConteudo, ControleTeste>();
         services.AddSingleton<TimeProvider>(_tempo);
         services.AddSingleton<IInteligenciaProvider>(_ia);
         services.AddSingleton<IBuscaSemanticaProvider>(_ia);

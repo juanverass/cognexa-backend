@@ -3,6 +3,7 @@ using System;
 using Cognexa.Infrastructure.Persistencia;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cognexa.Infrastructure.Persistencia.Migrations
 {
     [DbContext(typeof(CognexaDbContext))]
-    partial class CognexaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007181931_SegurancaDeConteudo")]
+    partial class SegurancaDeConteudo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -144,44 +147,6 @@ namespace Cognexa.Infrastructure.Persistencia.Migrations
                     b.HasIndex("IdLivro", "Data");
 
                     b.ToTable("RegistroDeConteudo");
-                });
-
-            modelBuilder.Entity("Cognexa.Domain.Anotacoes.RegistroDePublicacao", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Autor")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTimeOffset>("Data")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("IdAnotacao")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("IdAtor")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("IdLivro")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Moderacao")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Obra")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("Publicacao")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdAnotacao", "Data");
-
-                    b.ToTable("RegistroDePublicacao");
                 });
 
             modelBuilder.Entity("Cognexa.Domain.Biblioteca.Autor", b =>

@@ -9,6 +9,9 @@ public sealed class AnotacaoConfiguration : IEntityTypeConfiguration<Anotacao>
 {
     public void Configure(EntityTypeBuilder<Anotacao> b)
     {
+        b.Property(x => x.Obra).HasMaxLength(500);
+        b.Property(x => x.Autor).HasMaxLength(500);
+        b.Property<uint>("Versao").IsRowVersion();
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.TrechoOriginal).HasMaxLength(20000);

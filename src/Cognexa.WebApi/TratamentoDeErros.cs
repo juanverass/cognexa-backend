@@ -18,7 +18,7 @@ public sealed class TratamentoDeErros(IProblemDetailsService problems, ILogger<T
             _ => (500, "Erro interno")
         };
         if (status >= 500)
-            logger.LogError(exception, "Falha na requisição {TraceId}", context.TraceIdentifier);
+            logger.LogError("Falha {TipoDeErro} na requisição {TraceId}", exception.GetType().Name, context.TraceIdentifier);
         context.Response.StatusCode = status;
         return await problems.TryWriteAsync(new ProblemDetailsContext
         {

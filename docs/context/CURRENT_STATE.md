@@ -16,6 +16,11 @@ Este retrato descreve o conteúdo desta branch, não a sessão ou o ownership de
 - Identidade externa vinculada ao IdUsuario na Infrastructure; tokens opacos provisionados externamente.
 - Inteligência assistida preserva fontes e exige confirmação; providers configuráveis e busca semântica com isolamento por usuário.
 
+- Segurança de conteúdo: proveniência, OCR transitório por port, limites configuráveis com histórico de volume, publicação explícita, denúncia/retirada e auditoria sem copiar citações.
+- Gate jurídico: consulta/publicação social fechadas por padrão, dependentes de habilitação e referência de revisão especializada.
+
 ## Limites
 
 Frontend, autenticação social, billing e jobs de negócio não fazem parte desta entrega. Credenciais e connection strings são configuração externa. Nenhum startup aplica migrations automaticamente. PRs aguardam revisão e integração humana; epics não são implementadas diretamente.
+
+OCR externo precisa de configuração e verificação de retenção do provider. Capturas temporárias são locais ao processo; controles por IdLivro não deduplicam edições bibliográficas. A revisão jurídica e a operação administrativa de moderação permanecem pré-requisitos externos ao lançamento social.

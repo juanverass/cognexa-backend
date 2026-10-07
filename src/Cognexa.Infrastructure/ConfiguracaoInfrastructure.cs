@@ -10,6 +10,24 @@ public static class ConfiguracaoInfrastructure
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddOptions<Cognexa.Application.Anotacoes.ConteudoOptions>().Bind(configuration.GetSection("Conteudo"));
+        services.AddSingleton(p => p.GetRequiredService<Microsoft.Extensions.Options.IOptions<Cognexa.Application.Anotacoes.ConteudoOptions>>().Value);
+        services.AddScoped<Cognexa.Application.Anotacoes.IControleDeConteudo, ControleDeConteudo>();
+        services.AddScoped<Cognexa.Application.Anotacoes.PublicacaoAppService>();
+        services.AddScoped<Cognexa.Application.Anotacoes.OcrAppService>();
+        services.AddSingleton<Cognexa.Application.Anotacoes.IOcrTemporario, Cognexa.Infrastructure.Inteligencia.OcrTemporario>();
+        services.AddHttpClient<Cognexa.Application.Anotacoes.IOcrProvider, Cognexa.Infrastructure.Inteligencia.OcrProvider>(client =>
+        {
+            var url = configuration["Ocr:BaseUrl"];
+            if (url != null)
+            {
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != "https") throw new InvalidOperationException("OCR exige HTTPS.");
+                client.BaseAddress = new Uri(uri.AbsoluteUri.TrimEnd('/') + "/");
+            }
+            client.Timeout = TimeSpan.FromSeconds(30);
+            var token = configuration["Ocr:Token"];
+            if (!string.IsNullOrWhiteSpace(token)) client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+        }).RemoveAllLoggers();
         services.AddDbContext<CognexaDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Cognexa")));
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork>(p => p.GetRequiredService<CognexaDbContext>());

@@ -25,3 +25,12 @@ EF Core/PostgreSQL somente na Infrastructure. Migrations acompanham entidades re
 Status: vigente — solicitação humana e #15.
 
 Uma issue executável, uma branch e uma PR. Epics agrupam tarefas. Claims e finalização são comentários na issue; review vive na PR. Dependências não mescladas podem formar PRs empilhadas quando autorizadas; a pilha deve ser declarada. Merge é humano.
+
+
+## AD-05 — Conteúdo citado, captura transitória e fronteira pública
+
+Status: vigente — requisitos #37–#42.
+
+Trechos citados permanecem separados de comentários e carregam proveniência. OCR é um port da Application com provider na Infrastructure; imagens não são persistidas e somente uma seleção confirmada chega ao domínio. Capturas brutas expiram na memória do processo.
+
+Controles de volume usam histórico sem texto, transação e advisory lock PostgreSQL por livro; exclusão de uma anotação não reinicia a quota. Publicação é explícita, tem validação própria e depende de gate jurídico fechado por padrão. Denúncia oculta conteúdo público; retirada impede reexposição. A auditoria preserva atribuição e estados, sem cópia do trecho. Esses controles de produto não definem limites jurídicos universais.
