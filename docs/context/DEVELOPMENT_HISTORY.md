@@ -13,3 +13,5 @@ Este arquivo recebe marcos efetivamente integrados e PRs relevantes. Estado tran
 - Issue #19: recuperação do módulo Anotacoes com PR exclusiva, testes e modelo persistente correspondente.
 
 - Issue #20: recuperação do módulo Conhecimento com PR exclusiva, testes e modelo persistente correspondente.
+
+- Issue #21: recuperação do módulo Revisoes com PR exclusiva, testes e modelo persistente correspondente.
