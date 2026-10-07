@@ -14,5 +14,6 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../Compartilhado/PostgreSqlFixture.cs" Link="PostgreSqlFixture.cs" />
   </ItemGroup>
 </Project>
