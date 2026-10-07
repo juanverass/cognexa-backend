@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using Cognexa.Domain.Compartilhado;
 namespace Cognexa.Architecture.Tests;
 
 public class DependenciasTests
@@ -20,6 +21,15 @@ public class DependenciasTests
                 Assert.Empty(doc.Descendants("PackageReference"));
             if (camada == "Application")
                 Assert.DoesNotContain(doc.Descendants("PackageReference"), x => x.Attribute("Include")!.Value.Contains("EntityFramework") || x.Attribute("Include")!.Value.Contains("Npgsql"));
+        }
+    }
+    [Fact]
+    public void EntidadesUsamGuidENomenclaturaDeFk()
+    {
+        foreach (var tipo in typeof(EntidadeBase).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(EntidadeBase))))
+        {
+            Assert.Equal(typeof(Guid), tipo.GetProperty("Id")!.PropertyType);
+            Assert.DoesNotContain(tipo.GetProperties(), p => p.Name != "Id" && p.Name.EndsWith("Id"));
         }
     }
 }
