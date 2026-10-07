@@ -16,6 +16,31 @@ public static class ConfiguracaoInfrastructure
         services.AddHealthChecks().AddCheck<SaudeDoBanco>("postgresql", tags: ["ready"]);
         services.AddScoped<Cognexa.Application.Revisoes.IRevisaoRepository, Cognexa.Infrastructure.Revisoes.RevisaoRepository>();
         services.AddSingleton<Cognexa.Application.Revisoes.IAgendadorDeRevisao, Cognexa.Infrastructure.Revisoes.AgendadorDeRevisao>();
+        var protocolo = configuration["Inteligencia:Protocolo"] ?? "compativel";
+        if (protocolo is not ("compativel" or "gateway"))
+            throw new InvalidOperationException("Protocolo de inteligência inválido.");
+        services.AddOptions<Cognexa.Infrastructure.Inteligencia.InteligenciaOptions>().Bind(configuration.GetSection("Inteligencia"));
+        void ConfigurarHttp(HttpClient client)
+        {
+            var url = configuration["Inteligencia:BaseUrl"];
+            if (!string.IsNullOrWhiteSpace(url))
+            {
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != "https")
+                    throw new InvalidOperationException("Provider deve usar uma URL HTTPS válida.");
+                client.BaseAddress = new Uri(uri.AbsoluteUri.TrimEnd('/') + "/");
+            }
+            client.Timeout = TimeSpan.FromSeconds(60);
+            var token = configuration["Inteligencia:Token"];
+            if (!string.IsNullOrWhiteSpace(token))
+                client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+        }
+        services.AddHttpClient<Cognexa.Infrastructure.Inteligencia.ProviderHttp>(ConfigurarHttp);
+        services.AddHttpClient<Cognexa.Infrastructure.Inteligencia.ProviderCompativel>(ConfigurarHttp);
+        services.AddScoped<Cognexa.Application.Inteligencia.IInteligenciaProvider>(p => protocolo == "gateway"
+            ? p.GetRequiredService<Cognexa.Infrastructure.Inteligencia.ProviderHttp>()
+            : p.GetRequiredService<Cognexa.Infrastructure.Inteligencia.ProviderCompativel>());
+        services.AddScoped<Cognexa.Infrastructure.Inteligencia.IVetorizador>(p => (Cognexa.Infrastructure.Inteligencia.IVetorizador)p.GetRequiredService<Cognexa.Application.Inteligencia.IInteligenciaProvider>());
+        services.AddScoped<Cognexa.Application.Inteligencia.IBuscaSemanticaProvider, Cognexa.Infrastructure.Inteligencia.BuscaSemanticaProvider>();
         services.AddScoped<Cognexa.Application.Usuarios.IVinculoDeIdentidadeRepository, Cognexa.Infrastructure.Identidade.VinculoDeIdentidadeRepository>();
         return services;
     }
