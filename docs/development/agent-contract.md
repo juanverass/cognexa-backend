@@ -1,0 +1,303 @@
+# Contrato de desenvolvimento para agentes
+
+Contrato permanente de trabalho do Cognexa Vale para **todo desenvolvedor deste
+repositório — humano ou agente de IA** — e para toda tarefa executada aqui, sem
+depender do histórico de nenhuma conversa.
+
+Este é o documento neutro: nenhuma regra daqui depende da ferramenta que está
+executando. Cada agente tem um adaptador fino que aponta para cá:
+
+```text
+              docs/development/agent-contract.md
+                (este arquivo — fonte de verdade)
+                    /                    \
+               CLAUDE.md               AGENTS.md
+                   │                       │
+              Claude Code                Codex
+```
+
+Os adaptadores dizem **onde ler**; as regras permanentes existem uma única vez, aqui.
+
+Documentos normativos que complementam este contrato:
+
+| Documento | Define |
+| --- | --- |
+| [`handoff.md`](handoff.md) | turnos, ownership, handoff, Decision Locks, RECOVERY MODE |
+| [`backlog.md`](backlog.md) | fila de Issues, labels `status:*`, dependências, seleção de trabalho |
+| [`review.md`](review.md) | ciclo implementador → revisor → correção no mesmo PR |
+
+## Vocabulário
+
+| Termo | Significado |
+| --- | --- |
+| **agente** / **worker** | Um desenvolvedor de IA trabalhando neste repositório. Hoje: Claude Code e Codex. |
+| **worker atual** | O agente que detém o turno de uma Issue em andamento naquele momento. |
+| **turno** | O período em que um worker trabalha numa Issue, de quando assume até encerrar ou ser interrompido. |
+| **handoff** | O registro persistente do estado de uma Issue inacabada, que permite ao próximo worker continuar. |
+| **Decision Lock** | Decisão tomada durante uma Issue que o worker seguinte não reabre por preferência. |
+
+Claude e Codex têm **a mesma autoridade** e obedecem ao **mesmo contrato**, inclusive
+quando um atua como implementador e o outro como revisor. Não existe agente principal e
+agente reserva; existe worker atual e próximo worker.
+
+## Fonte de verdade
+
+O repositório, seus testes e os registros do GitHub (Issues e PRs) são a fonte de
+verdade. Ordem de precedência em caso de conflito:
+
+1. requisito explícito da Issue/tarefa atual;
+2. código, testes e decisões arquiteturais vigentes;
+3. este contrato;
+4. o adaptador do agente (`CLAUDE.md`, `AGENTS.md`).
+
+Um adaptador **nunca** contradiz este contrato. Se contradisser, é bug do adaptador:
+registre e siga o contrato. Se ainda restar ambiguidade material, registre-a no PR ou na
+Issue em vez de inventar comportamento.
+
+**A memória de conversa não é fonte de verdade.** Nem a sessão anterior, nem o contexto
+interno de qualquer modelo, nem um resumo colado no chat descrevem o estado do código ou
+de uma Issue. Nenhum agente redefine arquitetura, escopo ou backlog com base apenas em
+conversa. Se uma lembrança de sessão divergir do Git, **o Git vence**.
+
+Estes documentos são infraestrutura de governança: uma tarefa de feature não os altera
+casualmente. Mudanças no contrato, nos adaptadores ou nos protocolos são intencionais e
+vão em PR própria ou claramente justificada.
+
+## O projeto
+
+Cognexa é um backend independente para biblioteca, anotações, conhecimento, revisão ativa e inteligência. A stack e as convenções são definidas pelas issues e pelas decisões locais, sem herdar responsabilidades específicas do Dante.
+
+| O quê | Onde |
+| --- | --- |
+| Uso e configuração | `README.md` |
+| Domínio | `src/Cognexa.Domain` |
+| Casos de uso e ports | `src/Cognexa.Application` |
+| Persistência e providers | `src/Cognexa.Infrastructure` |
+| Hosts e composição | `src/Cognexa.WebApi`, `src/Cognexa.Worker` |
+| Testes por camada | `tests/Cognexa.*.Tests` |
+| Stack vigente | `.csproj`, `global.json`, `Directory.Build.props` |
+
+Não altere versão de pacote ou target framework sem pedido explícito.
+
+### Contexto persistente
+
+O conhecimento global do projeto vive em `docs/context/`, cada arquivo com uma
+responsabilidade:
+
+| Arquivo | Conteúdo | Como muda |
+| --- | --- | --- |
+| [`PROJECT_CONTEXT.md`](../context/PROJECT_CONTEXT.md) | visão, arquitetura, componentes, stack, segurança, limites | quando a arquitetura ou o propósito mudam |
+| [`CURRENT_STATE.md`](../context/CURRENT_STATE.md) | retrato do HEAD: marcos, features, limitações, próximos marcos | **reescrito** na parte afetada quando o estado do projeto muda |
+| [`ARCHITECTURE_DECISIONS.md`](../context/ARCHITECTURE_DECISIONS.md) | decisões vigentes com justificativa | decisão nova ganha `AD-NN`; decisão superada é marcada como substituída, não apagada |
+| [`DEVELOPMENT_HISTORY.md`](../context/DEVELOPMENT_HISTORY.md) | marcos consolidados e PRs relevantes | acrescentado ao concluir um marco |
+
+Regras:
+
+* uma Issue que muda o estado do projeto atualiza `CURRENT_STATE.md` no mesmo PR;
+* uma Issue que toma decisão estrutural registra-a em `ARCHITECTURE_DECISIONS.md`;
+* nada disso é diário de sessão: estado transitório de Issue (worker, checkpoint,
+  handoff) vive na Issue/PR, nunca em arquivo do repositório;
+* quando um documento de contexto divergir do código ou dos testes, o código vence e o
+  documento é corrigido.
+
+## Convenções de código
+
+* código novo de domínio/aplicação usa **PT-BR**, conforme as issues e `docs/context/ARCHITECTURE_DECISIONS.md`:
+  entidades, propriedades/métodos, enums, DTOs/SearchDtos, AppServices, repositories
+  específicos e casos de uso. Sufixos técnicos Repository/AppService/Dto/SearchDto
+  e conceitos externos estabelecidos permanecem; legado mantém o idioma existente
+  até sua migração explícita. Entidades persistentes usam Guid Id via EntidadeBase,
+  IDs/FKs com prefixo Id, sem TId;
+* textos voltados ao usuário final (contratos HTTP, mensagens de erro exibidas)
+  em **português**, como o código existente;
+* documentação do repositório em português;
+* siga o estilo do arquivo que está editando: densidade de comentários, nomenclatura,
+  primary constructors, records, `sealed`;
+* nenhuma entrada do usuário vira shell arbitrário; processos externos usam argumentos explícitos, sem interpolação não confiável;
+* segredos nunca em arquivo versionado, log ou resposta HTTP.
+
+## Build e testes
+
+```bash
+dotnet build Cognexa.sln
+dotnet test Cognexa.sln
+```
+
+Em WSL sem SDK Linux, use o SDK do Windows por interop antes de concluir que não é
+possível validar:
+
+```bash
+command -v dotnet || ls "/mnt/c/Program Files/dotnet/dotnet.exe"
+"/mnt/c/Program Files/dotnet/dotnet.exe" test Cognexa.sln
+```
+
+Testes unitários usam ports controladas. Testes de integração exigem PostgreSQL descartável por `COGNEXA_TEST_CONNECTION`, com schemas isolados; ausência da configuração é registrada como testes ignorados, nunca como integração aprovada. Não há chamadas pagas de IA na suíte.
+
+Toda alteração preserva os testes existentes, e regra nova relevante ganha cobertura. Nunca ajuste um teste apenas para fazer passar uma implementação incorreta. O workflow em `.github/workflows/ci.yml`, quando presente, executa build e testes. A validação local é obrigatória antes do PR; o resultado real vai no corpo do PR.
+
+Em `/mnt/c`, o `git status` pode acusar arquivos modificados só por cache de stat ou
+CRLF; confirme com `git diff` antes de concluir qualquer coisa.
+
+## Disciplina de escopo
+
+* implemente **somente** o escopo pedido pela Issue;
+* problema fora do escopo: registre no PR ou na Issue e siga a tarefa — exceto quando
+  impedir tecnicamente a conclusão; aí trate de forma mínima e explique;
+* **nada de refactor oportunista**: não renomeie arquivos não relacionados, não
+  reformate áreas grandes, não corrija warnings aleatórios, não atualize pacotes;
+* não invente regra de negócio: se não está na Issue, no código, nos testes ou na
+  documentação, não existe;
+* prefira solução simples, explícita e testável; sem camadas de abstração sem
+  necessidade real;
+* PRs pequenos, revisáveis e focados.
+
+Isso vale com força redobrada sobre trabalho recebido de outro worker: trabalho
+existente é presumido válido e não é descartado nem refatorado por gosto. Ver
+[Respeitar a implementação recebida](handoff.md#respeitar-a-implementação-recebida).
+
+## Backlog e modos de execução
+
+As GitHub Issues são a fila oficial de trabalho; o processo completo está em
+[`backlog.md`](backlog.md). Toda execução está em **exatamente um** modo, decidido pelo
+status da Issue:
+
+```text
+status:ready                                 → NOVA TAREFA
+status:in-progress                           → CONTINUAÇÃO DE TURNO
+status:review + correção solicitada no PR    → CONTINUAÇÃO DE TURNO (correção de review)
+status:backlog | status:blocked | type:epic  → não executar
+status:review sem correção solicitada        → não executar (está com o revisor)
+```
+
+* **NOVA TAREFA**: `ready → in-progress`, branch nova, `## TURNO ASSUMIDO`, workflow Git
+  completo.
+* **CONTINUAÇÃO DE TURNO**: sem novo claim de Issue e sem branch nova; entra pelo
+  procedimento de [continuar turno](handoff.md#continuar-turno).
+
+Uma tarefa pedida diretamente pelo humano, sem Issue, segue o workflow Git a partir da
+branch, sem claims.
+
+## Turnos e continuidade
+
+Uma Issue pode atravessar várias sessões e vários agentes. O estado transitório de uma
+Issue — worker atual, branch, checkpoint, próximos passos, Decision Locks — vive como
+comentários na própria Issue, conforme o [protocolo de turnos](handoff.md):
+
+* todo turno começa com `## TURNO ASSUMIDO` na Issue, publicado com a branch já
+  criada/confirmada e antes da primeira alteração de arquivo;
+* turno encerrado sem concluir publica `## HANDOFF`;
+* implementação concluída publica `## TURNO FINALIZADO` depois de abrir o PR — nunca
+  `## HANDOFF`;
+* continuação e correção de review usam a **mesma branch e o mesmo PR**;
+* sem handoff confiável, o próximo worker entra em RECOVERY MODE;
+* a working tree recebida nunca é destruída para "começar limpo".
+
+## Workflow Git
+
+```text
+ 1. Issue antes da implementação; claim ready → in-progress quando vem do backlog
+ 2. criar a branch da tarefa antes da primeira alteração
+ 3. confirmar a branch e verificar git status
+ 4. publicar ## TURNO ASSUMIDO na Issue, antes de qualquer mudança de conteúdo
+ 5. registrar o baseline (build + testes)
+ 6. implementar somente o escopo
+ 7. adicionar/ajustar testes
+ 8. validar (build + testes)
+ 9. revisar o diff completo
+10. commit com staging seletivo
+11. push
+12. abrir Pull Request para main e mover a Issue de in-progress para review
+13. publicar ## TURNO FINALIZADO na Issue
+14. deixar a working tree limpa
+```
+
+Em continuação de turno ou correção de review, a branch já existe: o worker entra pelo
+procedimento de [continuar turno](handoff.md#continuar-turno) em vez dos passos 1 a 4.
+
+### Branch
+
+`main` nunca recebe trabalho direto: toda mudança passa por branch + PR.
+
+```bash
+git switch -c feat/issue-<numero>-<slug>
+git branch --show-current
+```
+
+Prefixos: `feat/`, `fix/`, `refactor/`, `chore/`, `test/`, `docs/`. Padrão de nome
+usado no projeto: `<prefixo>/issue-<numero>-<slug>`.
+
+```text
+1 Issue → 1 branch → 1 PR
+```
+
+Nunca combine Issues independentes numa branch ou num PR. A branch é da Issue, não do
+agente: se a Issue trocar de worker, o próximo continua na **mesma branch e no mesmo
+PR**.
+
+### Alterações pré-existentes
+
+Depois de criar ou retomar a branch, rode `git status`. Havendo alterações que você não
+fez: não descarte, não sobrescreva, não faça reset. Entenda a origem antes de
+prosseguir — elas podem ser trabalho legítimo de outro worker. Ver
+[Segurança da working tree](handoff.md#segurança-da-working-tree).
+
+### Commit
+
+Staging **seletivo**, por caminho explícito, conferindo antes de commitar:
+
+```bash
+git add <caminho> <caminho> ...
+git diff --staged --stat
+git commit -m "<tipo>(<escopo opcional>): <resumo>"
+```
+
+`git add .`, `git add -A` e `git commit -a` não são receita: varrem a árvore e arrastam
+para o commit o que não pertence à tarefa.
+
+Mensagem curta e semântica (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`).
+Commit ao concluir cada unidade de trabalho relevante do turno; commits intermediários
+de checkpoint são permitidos.
+
+### Pull Request
+
+PR para `main` com, no corpo:
+
+```text
+Closes #<numero>
+
+## Implementação
+o que mudou e por quê
+
+## Validação
+comandos executados e resultado real (build, testes)
+```
+
+Quando uma Issue depende de outra ainda não mesclada, o PR pode ser **empilhado** sobre
+a branch da dependência; o corpo diz sobre qual PR ele está empilhado.
+
+A revisão segue o [protocolo de review](review.md): feedback no PR, veredito explícito,
+correção como turno novo na mesma branch e no mesmo PR. Papéis padrão: Claude implementa
+e Codex revisa, salvo override humano explícito (ver
+[Papéis padrão](review.md#papéis-padrão)).
+
+**Squash merge** é o padrão de integração. O merge é **sempre decisão humana**: nenhum
+agente faz merge do próprio PR sem instrução explícita.
+
+## Relatório final
+
+Toda tarefa concluída termina com um relatório curto, proporcional ao diff:
+
+```text
+Branch:
+Commit:
+PR:
+Baseline:          build/testes antes
+Validação:         build/testes depois
+Alterações principais:
+Testes adicionados/alterados:
+Pendências fora do escopo:
+Working tree:
+```
+
+Quando a Issue passou por mais de um worker, o relatório cobre a Issue inteira, não só
+o último turno.
