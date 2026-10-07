@@ -2,6 +2,7 @@ using Cognexa.Application.Anotacoes;
 using Cognexa.Application.Biblioteca;
 using Cognexa.Application.Compartilhado;
 using Cognexa.Application.Conhecimento;
+using Cognexa.Application.Inteligencia;
 using Cognexa.Application.Revisoes;
 using Cognexa.Application.Usuarios;
 using Cognexa.Domain.Anotacoes;
@@ -17,6 +18,7 @@ public sealed class CasosDeUsoTests : IDisposable
     private readonly UsuarioAtualTeste _usuario = new();
     private readonly UnitOfWorkTeste _uow = new();
     private readonly TempoTeste _tempo = new();
+    private readonly InteligenciaTeste _ia = new();
     public CasosDeUsoTests()
     {
         var services = new ServiceCollection().AddApplication();
@@ -27,6 +29,8 @@ public sealed class CasosDeUsoTests : IDisposable
         services.AddSingleton<IUsuarioAtual>(_usuario);
         services.AddSingleton<IUnitOfWork>(_uow);
         services.AddSingleton<TimeProvider>(_tempo);
+        services.AddSingleton<IInteligenciaProvider>(_ia);
+        services.AddSingleton<IBuscaSemanticaProvider>(_ia);
         services.AddSingleton<IAgendadorDeRevisao, AgendadorTeste>();
         services.AddSingleton<IRevisaoRepository, RevisaoRepositoryTeste>();
         _services = services.BuildServiceProvider();
@@ -82,6 +86,33 @@ public sealed class CasosDeUsoTests : IDisposable
         Assert.Single(await Obter<AprendizadoAppService>().ListarAsync(new(IdLivro: outra.IdLivro, IdConceito: conceito.Id, IdAnotacao: anotacao.Id)));
         var aplicacao = await Obter<ConexoesAppService>().CriarAplicacaoAsync(new(aprendizado.Id, "Aplicar"), default);
         Assert.Equal(aprendizado.Id, aplicacao.IdAprendizado);
+    }
+    [Fact]
+    public async Task SugestaoNaoGravaNemSobrescreveOriginalERejeitaFontesInventadas()
+    {
+        var anotacao = await Anotacao();
+        var gravacoes = _uow.Gravacoes;
+        var pedido = new PedidoInteligenciaDto(OperacaoInteligente.SugerirAprendizado, [anotacao.Id], [], []);
+        var resultado = await Obter<InteligenciaAppService>().SugerirAsync(pedido, default);
+        Assert.True(resultado.GeradoPorIA);
+        Assert.True(resultado.RequerConfirmacao);
+        Assert.Equal(anotacao.Id, resultado.Fontes.Single().Id);
+        Assert.Equal(gravacoes, _uow.Gravacoes);
+        Assert.Equal("Original", (await Obter<AnotacaoAppService>().ObterAsync(anotacao.Id)).TrechoOriginal);
+        _ia.FonteInventada = Guid.NewGuid();
+        await Assert.ThrowsAsync<ServicoIndisponivelException>(() => Obter<InteligenciaAppService>().SugerirAsync(pedido, default));
+    }
+    [Fact]
+    public async Task ResumoEBuscaSoRecebemFontesDoUsuarioAtual()
+    {
+        var anotacao = await Anotacao();
+        await Anotacao();
+        await Obter<InteligenciaAppService>().SugerirAsync(new(OperacaoInteligente.ResumirLivro, [], [], [], anotacao.IdLivro), default);
+        Assert.Equal(anotacao.Id, _ia.FontesRecebidas.Single().Id);
+        await Obter<InteligenciaAppService>().BuscarAsync("Consulta", 10, default);
+        Assert.Equal(_usuario.IdUsuario, _ia.UsuarioDaBusca);
+        _usuario.IdUsuario = Guid.NewGuid();
+        await Assert.ThrowsAsync<NaoEncontradoException>(() => Obter<InteligenciaAppService>().SugerirAsync(new(OperacaoInteligente.SugerirAprendizado, [anotacao.Id], [], []), default));
     }
     [Fact]
     public async Task RevisaoUsaAgendadorSubstituivelEGravaHistorico()

@@ -5,6 +5,7 @@ using Cognexa.Domain.Compartilhado;
 using Cognexa.Domain.Conhecimento;
 using Cognexa.Domain.Revisoes;
 using Cognexa.Domain.Usuarios;
+using Cognexa.Infrastructure.Inteligencia;
 using Cognexa.Infrastructure.Persistencia;
 using Cognexa.Infrastructure.Revisoes;
 using Cognexa.Tests.Compartilhado;
@@ -74,6 +75,26 @@ public class PostgreSqlTests(PostgreSqlFixture banco) : IClassFixture<PostgreSql
         Assert.Equal(2, (await repository.ListarHistoricoAsync(usuario.Id, revisao.Id, 1, default)).Count);
     }
     [PostgreSqlFact]
+    public async Task BuscaSemanticaEnviaSomenteDadosDoUsuarioEOrdenaPorSimilaridade()
+    {
+        await using var db = banco.Contexto();
+        var usuario = new Usuario("Teste");
+        var outro = new Usuario("Outro");
+        var livro = new Livro(usuario.Id, "Livro", ["Autor"]);
+        var livroOutro = new Livro(outro.Id, "Privado", ["Autor"]);
+        var nota = new Anotacao(usuario.Id, livro.Id, null, TipoDeAnotacao.Insight, "Memória", null, null, null, DateTimeOffset.UtcNow);
+        var privada = new Anotacao(outro.Id, livroOutro.Id, null, TipoDeAnotacao.Insight, "SEGREDO", null, null, null, DateTimeOffset.UtcNow);
+        db.AddRange(usuario, outro, livro, livroOutro, nota, privada);
+        await db.SalvarAsync();
+        var handler = new VetoresHandler();
+        using var http = new HttpClient(handler) { BaseAddress = new("https://provider.example/") };
+        var busca = new BuscaSemanticaProvider(db, new ProviderHttp(http));
+        var resultado = await busca.BuscarAsync(usuario.Id, "Consulta", 10, default);
+        Assert.Equal(nota.Id, resultado.Single().Id);
+        Assert.Equal(1d, resultado.Single().Similaridade, 8);
+        Assert.DoesNotContain("SEGREDO", handler.Enviados);
+    }
+    [PostgreSqlFact]
     public async Task BancoRejeitaReferenciasEntreProprietarios()
     {
         await using var db = banco.Contexto();
@@ -92,5 +113,23 @@ public class PostgreSqlTests(PostgreSqlFixture banco) : IClassFixture<PostgreSql
         await Assert.ThrowsAsync<ConflitoException>(() => separado.SalvarAsync());
         await using var verificado = banco.Contexto();
         Assert.False(await verificado.Set<Aprendizado>().AnyAsync(x => x.Id == aprendizado.Id));
+    }
+    private sealed class VetoresHandler : HttpMessageHandler
+    {
+        public string Enviados { get; private set; } = "";
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Enviados += await request.Content!.ReadAsStringAsync(cancellationToken);
+            using var json = System.Text.Json.JsonDocument.Parse(Enviados);
+            var count = json.RootElement.GetProperty("textos").GetArrayLength();
+            var payload = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                vetores = Enumerable.Range(0, count).Select(_ => new[] { 1d, 0d }).ToArray()
+            });
+            return new(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json")
+            };
+        }
     }
 }
