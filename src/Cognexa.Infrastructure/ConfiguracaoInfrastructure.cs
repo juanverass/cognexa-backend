@@ -14,6 +14,7 @@ public static class ConfiguracaoInfrastructure
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork>(p => p.GetRequiredService<CognexaDbContext>());
         services.AddHealthChecks().AddCheck<SaudeDoBanco>("postgresql", tags: ["ready"]);
+        services.AddScoped<Cognexa.Application.Usuarios.IVinculoDeIdentidadeRepository, Cognexa.Infrastructure.Identidade.VinculoDeIdentidadeRepository>();
         return services;
     }
 }
