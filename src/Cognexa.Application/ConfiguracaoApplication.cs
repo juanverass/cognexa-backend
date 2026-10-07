@@ -16,6 +16,7 @@ public static class ConfiguracaoApplication
         services.AddScoped<Cognexa.Application.Conhecimento.ConceitoAppService>();
         services.AddScoped<Cognexa.Application.Conhecimento.AprendizadoAppService>();
         services.AddScoped<Cognexa.Application.Conhecimento.ConexoesAppService>();
+        services.AddScoped<Cognexa.Application.Revisoes.RevisaoAppService>();
         return services;
     }
 }
