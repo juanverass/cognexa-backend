@@ -11,11 +11,13 @@ public sealed class Livro : EntidadeBase
     {
         IdUsuario = Validacao.Id(idUsuario, "IdUsuario");
         Atualizar(titulo, autores, totalDePaginas, isbn, edicao, capa);
+        ChaveDaObra = ChaveDeObra.Criar(Titulo, _autores.Select(x => x.Nome));
     }
     public Guid IdUsuario
     {
         get; private set;
     }
+    public string ChaveDaObra { get; private set; } = "";
     public string Titulo { get; private set; } = "";
     public int? TotalDePaginas
     {

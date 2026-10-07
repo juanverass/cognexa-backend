@@ -73,3 +73,8 @@ Resultado da revisão: 0 Errou, 1 Dificil, 2 Bom, 3 Facil. A revisão só aceita
 Origem do conteúdo de aprendizado, aplicação ou pergunta: 0 Manual, 1 InteligenciaArtificial. Para aplicar uma sugestão, o usuário faz uma criação explícita com a origem 1 e referências válidas. A API de inteligência nunca aplica sugestões automaticamente.
 
 As fontes de um aprendizado são preservadas. Remover uma anotação referenciada, um conceito em uso ou um aprendizado com aplicações/perguntas retorna 409. Para remover, desvincule/remova explicitamente os recursos dependentes que permitem exclusão. Histórico de revisão não tem endpoint de exclusão.
+
+
+## Conteúdo protegido, OCR e publicação
+
+Os endpoints e DTOs de captura, proveniência, elegibilidade, publicação, denúncia e retirada estão documentados na [política de conteúdo](conteudo-protegido.md). As novas ações seguem autenticação de conta ativa e os erros ProblemDetails existentes; consulta pública respeita o gate jurídico.

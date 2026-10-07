@@ -3,6 +3,7 @@ using System;
 using Cognexa.Infrastructure.Persistencia;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cognexa.Infrastructure.Persistencia.Migrations
 {
     [DbContext(typeof(CognexaDbContext))]
-    partial class CognexaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007182721_AuditoriaDePublicacao")]
+    partial class AuditoriaDePublicacao
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -127,11 +130,6 @@ namespace Cognexa.Infrastructure.Persistencia.Migrations
                     b.Property<int>("Caracteres")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ChaveDaObra")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
                     b.Property<DateTimeOffset>("Data")
                         .HasColumnType("timestamp with time zone");
 
@@ -146,7 +144,7 @@ namespace Cognexa.Infrastructure.Persistencia.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdUsuario", "ChaveDaObra", "Data");
+                    b.HasIndex("IdLivro", "Data");
 
                     b.ToTable("RegistroDeConteudo");
                 });
@@ -286,11 +284,6 @@ namespace Cognexa.Infrastructure.Persistencia.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<string>("ChaveDaObra")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
                     b.Property<string>("Edicao")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -311,8 +304,6 @@ namespace Cognexa.Infrastructure.Persistencia.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ChaveDaObra");
 
                     b.HasIndex("IdUsuario");
 

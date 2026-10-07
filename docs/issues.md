@@ -19,3 +19,20 @@ Cada issue executável possui branch e PR próprias. Epics agregam as issues e s
 | #21 | feat: implementar revisão ativa e histórico | [#34](https://github.com/juanverass/cognexa-backend/pull/34) |
 
 Inteligência é entregue pela issue filha da epic #7, nesta PR. PRs são empilhadas na ordem das dependências; o merge e o retarget para main são feitos durante integração humana.
+
+
+## Segurança de conteúdo (#36–#42)
+
+| Issue | Entrega | Validação |
+| --- | --- | --- |
+| #36 | Política de conteúdo, OCR transitório, proteção e fronteira social | Suites abaixo; gate jurídico permanece fechado |
+| #37 | Método de captura, origem do comentário, obra/autor e retenção | Persistência PostgreSQL e serialização, distinção de textos |
+| #38 | Port OCR, gateway HTTPS, buffer apagado, seleção única e TTL | Contrato HTTP controlado, descarte em falha, isolamento, expiração e seleção HTTP |
+| #39 | Quotas configuráveis por obra, ledger sem texto, janela e páginas contíguas | Recadastro/edições com ou sem ISBN, lock compartilhado, concorrência PostgreSQL, rollback, exclusão sem reset, sequência e backfill Unicode |
+| #40 | Privado/publicável/publicado, atribuição, revalidação e opt-in | Estados de domínio e fluxo HTTP com gate fechado/aberto |
+| #41 | Denúncia autenticada, ocultação preventiva, retirada e auditoria mínima | HTTP, rowversion PostgreSQL, atribuição após exclusão e bloqueio de reexposição |
+| #42 | Checklist e gate jurídico fechado por padrão | Registro + habilitação obrigatórios, consulta pública bloqueada |
+
+Provider OCR real precisa ser configurado e ter suas condições de retenção verificadas pelo operador. Testes usam provider controlado, sem uploads externos. Consulte [política e limites](conteudo-protegido.md) e [checklist jurídico](gate-juridico-social.md). Nenhuma revisão jurídica foi emitida por esta entrega.
+
+Validação da entrega #36–#42 em 07/10/2026: 58 testes aprovados, zero ignorados, com PostgreSQL real, migrations aplicadas em schemas descartáveis, contrato OCR controlado e fluxos HTTP.

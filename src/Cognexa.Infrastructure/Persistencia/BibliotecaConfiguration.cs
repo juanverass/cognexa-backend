@@ -11,6 +11,8 @@ public sealed class LivroConfiguration : IEntityTypeConfiguration<Livro>
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).ValueGeneratedNever();
         b.Property(x => x.Titulo).HasMaxLength(300).IsRequired();
+        b.Property(x => x.ChaveDaObra).HasMaxLength(64).IsRequired();
+        b.HasIndex(x => x.ChaveDaObra);
         b.Property(x => x.Isbn).HasMaxLength(30);
         b.Property(x => x.Edicao).HasMaxLength(100);
         b.Property(x => x.Capa).HasMaxLength(2000);

@@ -47,6 +47,8 @@ Cada fixture cria e remove apenas um schema aleatório próprio. O usuário do b
 - [Arquitetura e convenções](docs/adr/0001-arquitetura.md)
 - [Contratos HTTP e exemplos](docs/api.md)
 - [Providers de inteligência](docs/inteligencia.md)
+- [Política de conteúdo protegido e OCR](docs/conteudo-protegido.md)
+- [Gate jurídico de publicação social](docs/gate-juridico-social.md)
 - [Rastreabilidade das issues](docs/issues.md)
 
 `/health/live` verifica o host e `/health/ready` verifica PostgreSQL. Migrations são aplicadas explicitamente; o startup não altera o banco.
