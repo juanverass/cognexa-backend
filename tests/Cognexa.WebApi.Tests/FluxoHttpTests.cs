@@ -27,13 +27,14 @@ public class FluxoHttpTests(PostgreSqlFixture banco) : IClassFixture<PostgreSqlF
         public DateTimeOffset Agora { get; set; } = DateTimeOffset.UtcNow;
         public override DateTimeOffset GetUtcNow() => Agora;
     }
-    private WebApplicationFactory<Program> Factory(TempoControlado tempo, bool social = false) => new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> Factory(TempoControlado tempo, bool social = false, int maximoPublico = 2000) => new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
     {
         builder.UseEnvironment("Production");
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:Cognexa"] = banco.ConnectionString,
             ["Conteudo:SocialHabilitado"] = social.ToString(),
+            ["Conteudo:MaximoPublicoPorLivro"] = maximoPublico.ToString(),
             ["Conteudo:RegistroRevisaoJuridica"] = social ? "parecer-simulado-somente-teste" : null,
             ["Autenticacao:Identidades:0:IdIdentidade"] = Guid.NewGuid().ToString(),
             ["Autenticacao:Identidades:0:Token"] = TokenA,
@@ -182,5 +183,23 @@ public class FluxoHttpTests(PostgreSqlFixture banco) : IClassFixture<PostgreSqlF
         var registros = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(auditoria.Set<RegistroDePublicacao>().Where(x => x.IdAnotacao == nota.Id));
         Assert.Equal(3, registros.Count); Assert.All(registros, x => Assert.Equal("Autor", x.Autor));
         Assert.DoesNotContain("citação", System.Text.Json.JsonSerializer.Serialize(registros));
+    }
+
+    [PostgreSqlFact]
+    public async Task EdicoesERecadastrosCompartilhamLimitePublicoPorObra()
+    {
+        await using var factory = Factory(new(), true, 150); using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", TokenA);
+        await Ler<UsuarioDto>(await client.PostAsJsonAsync("/usuarios/me", new SalvarUsuarioDto("Obras")));
+        var original = await Ler<LivroDto>(await client.PostAsJsonAsync("/biblioteca/livros", new SalvarLivroDto("Ação e reflexão", ["João"], 100, "9780000000001", "1")));
+        var edicao = await Ler<LivroDto>(await client.PostAsJsonAsync("/biblioteca/livros", new SalvarLivroDto(" ACAO E REFLEXAO! ", ["JOAO"], 200, "9780000000002", "2")));
+        var semIsbn = await Ler<LivroDto>(await client.PostAsJsonAsync("/biblioteca/livros", new SalvarLivroDto("Ação e reflexão", ["João"])));
+        async Task<AnotacaoDto> Anotar(Guid livro) => await Ler<AnotacaoDto>(await client.PostAsJsonAsync("/anotacoes", new SalvarAnotacaoDto(livro, null, TipoDeAnotacao.Citacao, new string('x', 100), "comentário", 1, null, MetodoDeCaptura.Manual, OrigemDoConteudo.Manual, "Ação e reflexão", "João")));
+        var a = await Anotar(original.Id); var b = await Anotar(edicao.Id); var c = await Anotar(semIsbn.Id);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/anotacoes/{a.Id}/publicar", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync($"/anotacoes/{b.Id}/publicar", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync($"/anotacoes/{c.Id}/preparar-publicacao", null)).StatusCode);
+        await Ler<LivroDto>(await client.PutAsJsonAsync($"/biblioteca/livros/{original.Id}", new SalvarLivroDto("Título editado", ["Autor editado"], 100)));
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync($"/anotacoes/{b.Id}/publicar", null)).StatusCode);
     }
 }

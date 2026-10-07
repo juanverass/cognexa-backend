@@ -5,13 +5,14 @@ namespace Cognexa.Application.Tests;
 
 public sealed class ControleTeste : IControleDeConteudo
 {
+    public Task ValidarPublicacaoAsync(Guid usuario, Guid livro, Guid anotacao, string? trecho, CancellationToken ct) => Task.CompletedTask;
     private readonly List<RegistroDeConteudo> registros = [];
     public async Task<T> ExecutarAsync<T>(Guid usuario, Guid livro, string? trecho, int? pagina, Func<Task<T>> acao, CancellationToken ct)
     {
         if (!string.IsNullOrWhiteSpace(trecho))
         {
             PoliticaDeConteudo.Validar(new(), trecho.Length, pagina, registros.Where(x => x.IdLivro == livro).ToArray());
-            registros.Add(new(usuario, livro, trecho.Length, pagina, DateTimeOffset.UtcNow));
+            registros.Add(new(usuario, livro, trecho.Length, pagina, DateTimeOffset.UtcNow, "teste"));
         }
         return await acao();
     }
@@ -23,7 +24,7 @@ public class ConteudoTests
     {
         var livro = Guid.NewGuid();
         var usuario = Guid.NewGuid();
-        var registros = Enumerable.Range(1, 4).Select(p => new RegistroDeConteudo(usuario, livro, 100, p, DateTimeOffset.UtcNow)).ToArray();
+        var registros = Enumerable.Range(1, 4).Select(p => new RegistroDeConteudo(usuario, livro, 100, p, DateTimeOffset.UtcNow, "teste")).ToArray();
         Assert.Throws<RegraDeDominioException>(() => PoliticaDeConteudo.Validar(new(), 100, 5, registros));
         Assert.Throws<RegraDeDominioException>(() => PoliticaDeConteudo.Validar(new() { MaximoAcumulado = 450 }, 100, 20, registros));
         PoliticaDeConteudo.Validar(new(), 100, 4, registros);

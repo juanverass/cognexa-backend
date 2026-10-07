@@ -39,5 +39,6 @@ public static class PoliticaDeConteudo
 }
 public interface IControleDeConteudo
 {
+    Task ValidarPublicacaoAsync(Guid idUsuario, Guid idLivro, Guid idAnotacao, string? trecho, CancellationToken ct);
     Task<T> ExecutarAsync<T>(Guid idUsuario, Guid idLivro, string? trecho, int? pagina, Func<Task<T>> acao, CancellationToken ct);
 }

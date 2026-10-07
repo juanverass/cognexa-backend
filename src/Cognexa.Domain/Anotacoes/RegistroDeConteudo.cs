@@ -4,10 +4,11 @@ public enum MotivoDeDenuncia { DireitosAutorais, AtribuicaoIncorreta, Outro }
 public sealed class RegistroDeConteudo : EntidadeBase
 {
     private RegistroDeConteudo() { }
-    public RegistroDeConteudo(Guid idUsuario, Guid idLivro, int caracteres, int? pagina, DateTimeOffset agora)
-    { IdUsuario = idUsuario; IdLivro = idLivro; Caracteres = caracteres; Pagina = pagina; Data = agora; }
+    public RegistroDeConteudo(Guid idUsuario, Guid idLivro, int caracteres, int? pagina, DateTimeOffset agora, string chaveDaObra)
+    { IdUsuario = idUsuario; IdLivro = idLivro; Caracteres = caracteres; Pagina = pagina; Data = agora; ChaveDaObra = chaveDaObra; }
     public Guid IdUsuario { get; private set; }
     public Guid IdLivro { get; private set; }
+    public string ChaveDaObra { get; private set; } = "";
     public int Caracteres { get; private set; }
     public int? Pagina { get; private set; }
     public DateTimeOffset Data { get; private set; }

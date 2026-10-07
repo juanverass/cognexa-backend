@@ -10,6 +10,7 @@ using Cognexa.Infrastructure.Inteligencia;
 using Cognexa.Infrastructure.Persistencia;
 using Cognexa.Tests.Compartilhado;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Options;
 namespace Cognexa.Infrastructure.Tests;
 
@@ -129,6 +130,78 @@ public class ConteudoTests(PostgreSqlFixture banco) : IClassFixture<PostgreSqlFi
         Assert.Equal(EstadoDePublicacao.Removido, (await db.Set<Anotacao>().SingleAsync(x => x.Id == a.Id)).Publicacao);
         Assert.Single(await db.Set<Denuncia>().Where(x => x.IdAnotacao == a.Id).ToListAsync());
     }
+    [PostgreSqlFact]
+    public async Task RecadastroAposExcluirLivroNaoReiniciaQuotaEOutraObraContinuaLivre()
+    {
+        await using var db = banco.Contexto();
+        var usuario = new Usuario("Recadastro");
+        var original = new Livro(usuario.Id, "Ação e reflexão", ["João"], 100, "9780000000001", "1");
+        db.AddRange(usuario, original); await db.SalvarAsync();
+        var controle = new ControleDeConteudo(db, Options.Create(new ConteudoOptions { MaximoAcumulado = 150 }), TimeProvider.System);
+        await controle.ExecutarAsync(usuario.Id, original.Id, new string('x', 100), 1, () => db.SalvarAsync(), default);
+        db.Remove(original); await db.SalvarAsync(); db.ChangeTracker.Clear();
+        var recadastro = new Livro(usuario.Id, " ACAO E REFLEXAO! ", ["JOAO"], 200, "9780000000002", "2");
+        var outra = new Livro(usuario.Id, "Obra distinta", ["João"]);
+        db.AddRange(recadastro, outra); await db.SalvarAsync();
+        Assert.Equal(original.ChaveDaObra, recadastro.ChaveDaObra);
+        await Assert.ThrowsAsync<RegraDeDominioException>(() => controle.ExecutarAsync(usuario.Id, recadastro.Id, new string('x', 100), 2, () => db.SalvarAsync(), default));
+        await controle.ExecutarAsync(usuario.Id, outra.Id, new string('x', 100), 2, () => db.SalvarAsync(), default);
+        Assert.Equal(original.ChaveDaObra, (await db.Set<RegistroDeConteudo>().SingleAsync(x => x.IdLivro == original.Id)).ChaveDaObra);
+    }
+    [PostgreSqlFact]
+    public async Task LivrosDuplicadosCompartilhamLockSequenciaEIsolamQuotaPrivadaPorUsuario()
+    {
+        var usuario = new Usuario("Concorrência por obra"); var outro = new Usuario("Outro leitor");
+        var original = new Livro(usuario.Id, "Mesma obra", ["Autor"]);
+        var duplicado = new Livro(usuario.Id, "MESMA OBRA!", ["AUTOR"], 300, "9780000000002", "2");
+        var deOutro = new Livro(outro.Id, "Mesma obra", ["Autor"]);
+        await using (var setup = banco.Contexto()) { setup.AddRange(usuario, outro, original, duplicado, deOutro); await setup.SalvarAsync(); }
+        async Task<bool> Capturar(Livro livro, int caracteres, int pagina, ConteudoOptions options)
+        {
+            await using var db = banco.Contexto();
+            try
+            {
+                var controle = new ControleDeConteudo(db, Options.Create(options), TimeProvider.System);
+                await controle.ExecutarAsync(livro.IdUsuario, livro.Id, new string('x', caracteres), pagina, () => db.SalvarAsync(), default);
+                return true;
+            }
+            catch (RegraDeDominioException) { return false; }
+        }
+        var limites = new ConteudoOptions { MaximoAcumulado = 150 };
+        Assert.Single(await Task.WhenAll(Capturar(original, 100, 1, limites), Capturar(duplicado, 100, 1, limites)), x => x);
+        Assert.True(await Capturar(deOutro, 100, 1, limites));
+        var sequencia = new ConteudoOptions { MaximoPaginasSequenciais = 3 };
+        Assert.True(await Capturar(original, 10, 2, sequencia));
+        Assert.False(await Capturar(duplicado, 10, 3, sequencia));
+    }
+    [PostgreSqlFact]
+    public async Task MigrationAgrupaLivrosExistentesEPreservaHistoricoOrfao()
+    {
+        var isolado = new PostgreSqlFixture(); await isolado.InitializeAsync();
+        try
+        {
+            var usuario = new Usuario("Migration");
+            var livro = new Livro(usuario.Id, "Ação: 東京 ΟΣ", ["João", "MARIA", "joa\u0303o"]);
+            var removido = new Livro(usuario.Id, "Livro removido", ["Autor"]);
+            await using (var db = isolado.Contexto())
+            {
+                db.AddRange(usuario, livro, removido);
+                db.Add(new RegistroDeConteudo(usuario.Id, livro.Id, 100, 1, DateTimeOffset.UtcNow, livro.ChaveDaObra));
+                db.Add(new RegistroDeConteudo(usuario.Id, removido.Id, 100, 2, DateTimeOffset.UtcNow, removido.ChaveDaObra));
+                await db.SalvarAsync(); db.Remove(removido); await db.SalvarAsync();
+                await db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261007182721_AuditoriaDePublicacao");
+                await db.Database.MigrateAsync();
+            }
+            await using var verificar = isolado.Contexto();
+            Assert.Equal(livro.ChaveDaObra, await verificar.Set<Livro>().Where(x => x.Id == livro.Id).Select(x => x.ChaveDaObra).SingleAsync());
+            Assert.Equal(livro.ChaveDaObra, await verificar.Set<RegistroDeConteudo>().Where(x => x.IdLivro == livro.Id).Select(x => x.ChaveDaObra).SingleAsync());
+            Assert.Equal(ChaveDeObra.LegadoIndeterminado, await verificar.Set<RegistroDeConteudo>().Where(x => x.IdLivro == removido.Id).Select(x => x.ChaveDaObra).SingleAsync());
+            var controle = new ControleDeConteudo(verificar, Options.Create(new ConteudoOptions { MaximoAcumulado = 150 }), TimeProvider.System);
+            await Assert.ThrowsAsync<RegraDeDominioException>(() => controle.ExecutarAsync(usuario.Id, livro.Id, "mais", 3, () => verificar.SalvarAsync(), default));
+        }
+        finally { await isolado.DisposeAsync(); }
+    }
+
 }
 
 public class DescarteOcrTests

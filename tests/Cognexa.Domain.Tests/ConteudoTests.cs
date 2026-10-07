@@ -31,3 +31,22 @@ public class ConteudoTests
         Assert.Throws<RegraDeDominioException>(() => a.Publicar(true));
     }
 }
+
+public class ChaveDeObraTests
+{
+    [Fact]
+    public void RecadastrosEEdicoesCompartilhamChaveSemDependerDeIsbn()
+    {
+        var usuario = Guid.NewGuid();
+        var original = new Cognexa.Domain.Biblioteca.Livro(usuario, "Ação: e Reflexão", ["João", "Maria"], 100, "9780000000001", "1");
+        var edicao = new Cognexa.Domain.Biblioteca.Livro(usuario, "  ACAO E REFLEXAO! ", ["MARIA", "joa\u0303o", "João"], 200, "9780000000002", "2");
+        var semIsbn = new Cognexa.Domain.Biblioteca.Livro(usuario, "Ação e reflexão", ["Maria", "João"]);
+        Assert.Equal(original.ChaveDaObra, edicao.ChaveDaObra);
+        Assert.Equal(original.ChaveDaObra, semIsbn.ChaveDaObra);
+        Assert.NotEqual(original.ChaveDaObra, Cognexa.Domain.Biblioteca.ChaveDeObra.Criar("Outra obra", ["João", "Maria"]));
+        Assert.NotEqual(original.ChaveDaObra, Cognexa.Domain.Biblioteca.ChaveDeObra.Criar("Ação e reflexão", ["Outro autor"]));
+        var chave = original.ChaveDaObra;
+        original.Atualizar("Correção de título", ["Autor corrigido"], 100, null, null, null);
+        Assert.Equal(chave, original.ChaveDaObra);
+    }
+}

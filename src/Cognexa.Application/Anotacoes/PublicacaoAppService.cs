@@ -17,10 +17,7 @@ public sealed class PublicacaoAppService(AnotacaoAppService privado, IRepository
         var a = await privado.ExigirAnotacaoAsync(id, ct);
         await controle.ExecutarAsync(atual.IdUsuario, a.IdLivro, null, null, async () =>
         {
-            options.Validar();
-            var publicas = await anotacoes.ListarAsync(x => x.IdLivro == a.IdLivro && x.Id != id && (x.Publicacao == EstadoDePublicacao.Publicado || x.Publicacao == EstadoDePublicacao.Publicavel), 500, ct);
-            if (publicas.Count == 500 || (a.TrechoOriginal?.Length ?? 0) > options.MaximoPublicoPorTrecho || publicas.Sum(x => (long)(x.TrechoOriginal?.Length ?? 0)) + (a.TrechoOriginal?.Length ?? 0) > options.MaximoPublicoPorLivro)
-                throw new RegraDeDominioException("Limite técnico público excedido.");
+            await controle.ValidarPublicacaoAsync(atual.IdUsuario, a.IdLivro, a.Id, a.TrechoOriginal, ct);
             if (publicar) a.Publicar(options.GateAberto); else a.PrepararPublicacao();
             await auditoria.AdicionarAsync(new(a, atual.IdUsuario, tempo.GetUtcNow()), ct);
             await uow.SalvarAsync(ct);
